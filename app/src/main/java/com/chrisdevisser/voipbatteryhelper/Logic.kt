@@ -25,11 +25,23 @@ private fun isWifiConnected(context: Context): Boolean =
 
 fun setCellRadioEnabled(context: Context, enabled: Boolean) {
     try {
-        val telephonyService = context.getSystemService(TelephonyManager::class.java)
-        val setMobileDataEnabledMethod = telephonyService.javaClass.getDeclaredMethod("setDataEnabled", Boolean::class.javaPrimitiveType)
-        setMobileDataEnabledMethod?.invoke(telephonyService, enabled)
+        context.getSystemService(TelephonyManager::class.java)
+            .let {getTeleService(it)}
+            .also {callSetRadio(it, enabled)}
     } catch (e: Exception) {
         val action = if (enabled) "enable" else "disable"
         throw AndroidWasDumb("Failed to $action cell radio: $e")
     }
 }
+
+private fun getTeleService(teleManager: TelephonyManager) =
+    teleManager::class.java
+        .getDeclaredMethod("getITelephony")
+        .run {
+            isAccessible = true
+            invoke(teleManager)
+        }
+
+private fun callSetRadio(teleService: Any, enabled: Boolean) =
+    teleService::class.java.getDeclaredMethod("setRadio", Boolean::class.javaPrimitiveType)
+        .invoke(teleService, enabled)
