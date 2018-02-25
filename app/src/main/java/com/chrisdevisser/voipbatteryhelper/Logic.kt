@@ -2,6 +2,8 @@ package com.chrisdevisser.voipbatteryhelper
 
 import android.content.Context
 import android.net.ConnectivityManager
+import android.net.ConnectivityManager.TYPE_WIFI
+import android.net.wifi.WifiManager
 import android.telephony.TelephonyManager
 import android.util.Log
 
@@ -21,7 +23,16 @@ private fun logAction(connected: Boolean) {
 
 private fun isWifiConnected(context: Context): Boolean =
     (context.getSystemService(ConnectivityManager::class.java) ?: throw AndroidWasDumb("No ConnectivityManager"))
-        .run {allNetworks.any {getNetworkInfo(it).isConnected}}
+        .run {allNetworks.any { network ->
+            getNetworkInfo(network)?.let {
+                if (it.type == TYPE_WIFI && it.isConnected) {
+                    Log.d(TAG, "Connected to ${context.applicationContext.getSystemService(WifiManager::class.java)?.connectionInfo?.ssid}")
+                    true
+                } else {
+                    false
+                }
+            } ?: false
+        }}
 
 fun setCellRadioEnabled(context: Context, enabled: Boolean) {
     try {
